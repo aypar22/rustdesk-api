@@ -1,4 +1,4 @@
-lang: "zh-CN"
+lang: "en"
 app:
   web-client: 1  # 1:启用 0:禁用
   register: false #是否开启注册
@@ -21,11 +21,11 @@ mysql:
   addr: ""
   dbname: ""
 rustdesk:
-  id-server: "192.168.1.88:21116"
-  relay-server: "192.168.1.88:21117"
-  api-server: "http://127.0.0.1:4545"
-  key: ""
-  key-file: "./conf/data/id_ed25519.pub"
+  id-server: "bilisimdeposu.duckdns.org"
+  relay-server: "bilisimdeposu.duckdns.org"
+  api-server: "http://bilisimdeposu.duckdns.org:4545"
+  key: "Gate+4589"
+  key-file: ""
   personal: 1
 logger:
   path: "./runtime/log.txt"

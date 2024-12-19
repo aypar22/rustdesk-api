@@ -2,6 +2,7 @@ package router
 
 import (
 	_ "Gwen/docs/admin"
+	"Gwen/global"
 	"Gwen/http/controller/admin"
 	"Gwen/http/controller/admin/my"
 	"Gwen/http/middleware"
@@ -14,7 +15,9 @@ func Init(g *gin.Engine) {
 
 	//swagger
 	//g.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
-	g.GET("/admin/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, ginSwagger.InstanceName("admin")))
+	if global.Config.App.ShowSwagger == 1 {
+		g.GET("/admin/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, ginSwagger.InstanceName("admin")))
+	}
 
 	adg := g.Group("/api/admin")
 	LoginBind(adg)
@@ -49,6 +52,7 @@ func Init(g *gin.Engine) {
 func LoginBind(rg *gin.RouterGroup) {
 	cont := &admin.Login{}
 	rg.POST("/login", cont.Login)
+	rg.GET("/captcha", cont.Captcha)
 	rg.POST("/logout", cont.Logout)
 	rg.GET("/login-options", cont.LoginOptions)
 	rg.POST("/oidc/auth", cont.OidcAuth)
@@ -62,7 +66,7 @@ func UserBind(rg *gin.RouterGroup) {
 		aR.GET("/current", cont.Current)
 		aR.POST("/changeCurPwd", cont.ChangeCurPwd)
 		aR.POST("/myOauth", cont.MyOauth)
-		aR.GET("/myPeer", cont.MyPeer)
+		//aR.GET("/myPeer", cont.MyPeer)
 		aR.POST("/groupUsers", cont.GroupUsers)
 	}
 	aRP := rg.Group("/user").Use(middleware.AdminPrivilege())
@@ -90,7 +94,7 @@ func GroupBind(rg *gin.RouterGroup) {
 }
 
 func TagBind(rg *gin.RouterGroup) {
-	aR := rg.Group("/tag")
+	aR := rg.Group("/tag").Use(middleware.AdminPrivilege())
 	{
 		cont := &admin.Tag{}
 		aR.GET("/list", cont.List)
@@ -105,16 +109,14 @@ func AddressBookBind(rg *gin.RouterGroup) {
 	aR := rg.Group("/address_book")
 	{
 		cont := &admin.AddressBook{}
-		aR.GET("/list", cont.List)
-		aR.GET("/detail/:id", cont.Detail)
-		aR.POST("/create", cont.Create)
-		aR.POST("/update", cont.Update)
-		aR.POST("/delete", cont.Delete)
 		aR.POST("/shareByWebClient", cont.ShareByWebClient)
 
-		aR.POST("/batchUpdateTags", cont.BatchUpdateTags)
-
 		arp := aR.Use(middleware.AdminPrivilege())
+		arp.GET("/list", cont.List)
+		//arp.GET("/detail/:id", cont.Detail)
+		arp.POST("/create", cont.Create)
+		arp.POST("/update", cont.Update)
+		arp.POST("/delete", cont.Delete)
 		arp.POST("/batchCreate", cont.BatchCreate)
 		arp.POST("/batchCreateFromPeers", cont.BatchCreateFromPeers)
 
@@ -176,7 +178,7 @@ func AuditBind(rg *gin.RouterGroup) {
 	afR.POST("/batchDelete", cont.BatchFileDelete)
 }
 func AddressBookCollectionBind(rg *gin.RouterGroup) {
-	aR := rg.Group("/address_book_collection")
+	aR := rg.Group("/address_book_collection").Use(middleware.AdminPrivilege())
 	{
 		cont := &admin.AddressBookCollection{}
 		aR.GET("/list", cont.List)
@@ -188,7 +190,7 @@ func AddressBookCollectionBind(rg *gin.RouterGroup) {
 
 }
 func AddressBookCollectionRuleBind(rg *gin.RouterGroup) {
-	aR := rg.Group("/address_book_collection_rule")
+	aR := rg.Group("/address_book_collection_rule").Use(middleware.AdminPrivilege())
 	{
 		cont := &admin.AddressBookCollectionRule{}
 		aR.GET("/list", cont.List)
@@ -228,13 +230,49 @@ func FileBind(rg *gin.RouterGroup) {
 
 func MyBind(rg *gin.RouterGroup) {
 	{
-		msr := &my.ShareRecord{}
-		rg.GET("/my/share_record/list", msr.List)
-		rg.POST("/my/share_record/delete", msr.Delete)
-		rg.POST("/my/share_record/batchDelete", msr.BatchDelete)
+		cont := &my.ShareRecord{}
+		rg.GET("/my/share_record/list", cont.List)
+		rg.POST("/my/share_record/delete", cont.Delete)
+		rg.POST("/my/share_record/batchDelete", cont.BatchDelete)
+	}
 
-		mab := &my.AddressBook{}
-		rg.POST("/my/address_book/batchCreateFromPeers", mab.BatchCreateFromPeers)
+	{
+		cont := &my.AddressBook{}
+		rg.GET("/my/address_book/list", cont.List)
+		rg.POST("/my/address_book/create", cont.Create)
+		rg.POST("/my/address_book/update", cont.Update)
+		rg.POST("/my/address_book/delete", cont.Delete)
+		rg.POST("/my/address_book/batchCreateFromPeers", cont.BatchCreateFromPeers)
+		rg.POST("/my/address_book/batchUpdateTags", cont.BatchUpdateTags)
+	}
+
+	{
+		cont := &my.Tag{}
+		rg.GET("/my/tag/list", cont.List)
+		rg.POST("/my/tag/create", cont.Create)
+		rg.POST("/my/tag/update", cont.Update)
+		rg.POST("/my/tag/delete", cont.Delete)
+	}
+
+	{
+		cont := &my.AddressBookCollection{}
+		rg.GET("/my/address_book_collection/list", cont.List)
+		rg.POST("/my/address_book_collection/create", cont.Create)
+		rg.POST("/my/address_book_collection/update", cont.Update)
+		rg.POST("/my/address_book_collection/delete", cont.Delete)
+	}
+
+	{
+		cont := &my.AddressBookCollectionRule{}
+		rg.GET("/my/address_book_collection_rule/list", cont.List)
+		rg.POST("/my/address_book_collection_rule/create", cont.Create)
+		rg.POST("/my/address_book_collection_rule/update", cont.Update)
+		rg.POST("/my/address_book_collection_rule/delete", cont.Delete)
+	}
+	{
+		cont := &my.Peer{}
+		rg.GET("/my/peer/list", cont.List)
+
 	}
 }
 
